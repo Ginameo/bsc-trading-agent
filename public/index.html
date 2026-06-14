@@ -1,0 +1,240 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>BSC AI Trading Agent</title>
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🤖</text></svg>">
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+body{background:#0a0e14;color:#e6edf3;font-family:'Inter',system-ui,-apple-system,sans-serif;min-height:100vh}
+.container{max-width:1200px;margin:0 auto;padding:24px}
+
+/* Header */
+.header{text-align:center;padding:40px 0 32px}
+.header h1{font-size:2.5rem;font-weight:800;background:linear-gradient(135deg,#f0b90b 0%,#ff6b35 50%,#f0b90b 100%);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-size:200% auto;animation:shimmer 3s linear infinite}
+@keyframes shimmer{to{background-position:200% center}}
+.header .badge{display:inline-block;margin-top:12px;padding:6px 16px;border-radius:20px;font-size:0.8rem;font-weight:600;background:rgba(240,185,11,0.15);color:#f0b90b;border:1px solid rgba(240,185,11,0.3)}
+.header .sub{color:#8b949e;margin-top:8px;font-size:0.95rem}
+
+/* Status bar */
+.status-bar{display:flex;justify-content:center;gap:24px;margin-bottom:32px;flex-wrap:wrap}
+.status-item{display:flex;align-items:center;gap:8px;font-size:0.85rem;color:#8b949e}
+.dot{width:8px;height:8px;border-radius:50%;animation:pulse 2s ease-in-out infinite}
+.dot.live{background:#3fb950}.dot.paper{background:#f0b90b}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:0.5}}
+
+/* Grid */
+.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:16px;margin-bottom:24px}
+.card{background:#161b22;border:1px solid #21262d;border-radius:16px;padding:24px;transition:border-color 0.2s}
+.card:hover{border-color:#30363d}
+.card-label{font-size:0.75rem;text-transform:uppercase;letter-spacing:1.5px;color:#8b949e;margin-bottom:12px;font-weight:600}
+.card-value{font-size:2rem;font-weight:700;line-height:1.2}
+.card-sub{font-size:0.85rem;color:#8b949e;margin-top:8px}
+.up{color:#3fb950}.down{color:#f85149}.neutral{color:#e6edf3}
+
+/* Signal */
+.signal-container{text-align:center;padding:32px}
+.signal-badge{display:inline-block;padding:12px 32px;border-radius:24px;font-size:1.1rem;font-weight:700;letter-spacing:1px}
+.signal-STRONG_BUY,.signal-BUY{background:rgba(63,185,80,0.15);color:#3fb950;border:2px solid rgba(63,185,80,0.4)}
+.signal-STRONG_SELL,.signal-SELL{background:rgba(248,81,73,0.15);color:#f85149;border:2px solid rgba(248,81,73,0.4)}
+.signal-HOLD{background:rgba(110,118,129,0.15);color:#8b949e;border:2px solid rgba(110,118,129,0.4)}
+.confidence{margin-top:12px;font-size:0.9rem;color:#8b949e}
+.confidence-bar{width:200px;height:6px;background:#21262d;border-radius:3px;margin:8px auto;overflow:hidden}
+.confidence-fill{height:100%;border-radius:3px;background:linear-gradient(90deg,#f0b90b,#3fb950);transition:width 0.5s ease}
+
+/* Reasons */
+.reasons{background:#161b22;border:1px solid #21262d;border-radius:16px;padding:24px;margin-bottom:24px}
+.reasons h3{font-size:0.85rem;text-transform:uppercase;letter-spacing:1.5px;color:#f0b90b;margin-bottom:16px;font-weight:600}
+.reason-item{display:flex;align-items:center;gap:12px;padding:10px 0;border-bottom:1px solid #21262d}
+.reason-item:last-child{border:none}
+.reason-icon{width:32px;height:32px;border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:0.9rem;background:rgba(240,185,11,0.1)}
+
+/* Table */
+.table-card{background:#161b22;border:1px solid #21262d;border-radius:16px;padding:24px;margin-bottom:24px;overflow-x:auto}
+.table-card h3{font-size:0.85rem;text-transform:uppercase;letter-spacing:1.5px;color:#f0b90b;margin-bottom:16px;font-weight:600}
+table{width:100%;border-collapse:collapse}
+th{text-align:left;padding:12px;font-size:0.75rem;text-transform:uppercase;letter-spacing:1px;color:#8b949e;border-bottom:1px solid #21262d;font-weight:600}
+td{padding:12px;border-bottom:1px solid #161b22;font-size:0.9rem}
+tr:hover td{background:rgba(240,185,11,0.03)}
+
+/* Footer */
+.footer{text-align:center;padding:32px;color:#484f58;font-size:0.8rem}
+.footer a{color:#f0b90b;text-decoration:none}
+
+/* Loading */
+.skeleton{background:linear-gradient(90deg,#161b22 25%,#21262d 50%,#161b22 75%);background-size:200% 100%;animation:loading 1.5s infinite;border-radius:4px}
+@keyframes loading{0%{background-position:200% 0}100%{background-position:-200% 0}}
+
+/* Responsive */
+@media(max-width:768px){
+  .header h1{font-size:1.8rem}
+  .grid{grid-template-columns:1fr}
+  .card-value{font-size:1.5rem}
+}
+</style>
+</head>
+<body>
+<div class="container">
+  <div class="header">
+    <h1>🤖 BSC AI Trading Agent</h1>
+    <div class="badge">BNB Hack: AI Trading Agent Edition</div>
+    <p class="sub">Autonomous multi-signal trading on BNB Chain</p>
+  </div>
+
+  <div class="status-bar">
+    <div class="status-item"><div class="dot paper" id="mode-dot"></div><span id="mode-text">PAPER MODE</span></div>
+    <div class="status-item">📡 <span id="data-source">Binance + CoinGecko</span></div>
+    <div class="status-item">🔄 <span id="last-update">Loading...</span></div>
+  </div>
+
+  <div class="grid">
+    <div class="card">
+      <div class="card-label">BNB / USDT</div>
+      <div class="card-value neutral" id="price">--</div>
+      <div class="card-sub" id="price-change">--</div>
+    </div>
+    <div class="card">
+      <div class="card-label">24h Volume</div>
+      <div class="card-value neutral" id="volume">--</div>
+      <div class="card-sub" id="trades">--</div>
+    </div>
+    <div class="card">
+      <div class="card-label">Market Sentiment</div>
+      <div class="card-value neutral" id="sentiment">--</div>
+      <div class="card-sub" id="market-cap">--</div>
+    </div>
+    <div class="card">
+      <div class="card-label">7d Change</div>
+      <div class="card-value neutral" id="change-7d">--</div>
+      <div class="card-sub" id="change-24h">--</div>
+    </div>
+  </div>
+
+  <div class="signal-container">
+    <div class="card-label">AI Signal</div>
+    <div id="signal" style="margin-top:12px"><span class="skeleton" style="width:120px;height:40px;display:inline-block"></span></div>
+    <div class="confidence" id="confidence-text">--</div>
+    <div class="confidence-bar"><div class="confidence-fill" id="confidence-bar" style="width:0%"></div></div>
+  </div>
+
+  <div class="reasons">
+    <h3>📊 Analysis Breakdown</h3>
+    <div id="reasons"><div class="reason-item"><div class="reason-icon">⏳</div><span>Loading analysis...</span></div></div>
+  </div>
+
+  <div class="table-card">
+    <h3>🔥 Trending (CoinGecko)</h3>
+    <table>
+      <thead><tr><th>#</th><th>Symbol</th><th>Name</th><th>Score</th></tr></thead>
+      <tbody id="trending"><tr><td colspan="4" style="color:#484f58">Loading...</td></tr></tbody>
+    </table>
+  </div>
+
+  <div class="grid">
+    <div class="card">
+      <div class="card-label">Trading Wallet</div>
+      <div class="card-sub" style="word-break:break-all;font-family:monospace;font-size:0.8rem" id="wallet">--</div>
+    </div>
+    <div class="card">
+      <div class="card-label">Strategy</div>
+      <div class="card-sub">RSI + MACD + Bollinger Bands + Volume + Order Book + Sentiment</div>
+    </div>
+    <div class="card">
+      <div class="card-label">Risk Management</div>
+      <div class="card-sub">Stop Loss: 3% • Take Profit: 5% • Max Position: 0.01 BNB</div>
+    </div>
+  </div>
+
+  <div class="footer">
+    Built with 🐱 for BNB Hack: AI Trading Agent Edition •
+    <a href="https://github.com/Ginameo/bsc-trading-agent" target="_blank">GitHub</a> •
+    Powered by Binance API + CoinGecko
+  </div>
+</div>
+
+<script>
+const API = '/api/status';
+
+async function refresh() {
+  try {
+    const resp = await fetch(API);
+    const data = await resp.json();
+
+    // Price
+    const price = data.binance?.price;
+    if (price) {
+      document.getElementById('price').textContent = '$' + parseFloat(price).toFixed(2);
+    }
+
+    // Ticker
+    const t = data.binance?.ticker_24h;
+    if (t) {
+      const pct = parseFloat(t.price_change_pct);
+      const el = document.getElementById('price-change');
+      el.textContent = (pct > 0 ? '▲' : '▼') + ' ' + Math.abs(pct).toFixed(2) + '% (24h)';
+      el.className = 'card-sub ' + (pct >= 0 ? 'up' : 'down');
+
+      document.getElementById('volume').textContent = '$' + (t.volume / 1e6).toFixed(1) + 'M';
+      document.getElementById('trades').textContent = t.trades.toLocaleString() + ' trades';
+    }
+
+    // CoinGecko
+    const cg = data.coingecko;
+    if (cg) {
+      const sent = cg.sentiment_up || 50;
+      document.getElementById('sentiment').textContent = sent + '% Bullish';
+      document.getElementById('sentiment').className = 'card-value ' + (sent > 55 ? 'up' : sent < 45 ? 'down' : 'neutral');
+      document.getElementById('market-cap').textContent = 'MCap: $' + (cg.market_cap / 1e9).toFixed(1) + 'B';
+
+      const c7d = cg.price_change_7d;
+      if (c7d !== undefined) {
+        document.getElementById('change-7d').textContent = (c7d > 0 ? '+' : '') + c7d.toFixed(1) + '%';
+        document.getElementById('change-7d').className = 'card-value ' + (c7d >= 0 ? 'up' : 'down');
+      }
+      const c24h = cg.price_change_24h;
+      if (c24h !== undefined) {
+        document.getElementById('change-24h').textContent = '24h: ' + (c24h > 0 ? '+' : '') + c24h.toFixed(2) + '%';
+      }
+    }
+
+    // Signal
+    const sig = data.signal;
+    if (sig) {
+      document.getElementById('signal').innerHTML = '<span class="signal-badge signal-' + sig.signal + '">' + sig.signal.replace('_', ' ') + '</span>';
+      document.getElementById('confidence-text').textContent = 'Confidence: ' + (sig.confidence * 100).toFixed(0) + '%';
+      document.getElementById('confidence-bar').style.width = (sig.confidence * 100) + '%';
+
+      const reasonsDiv = document.getElementById('reasons');
+      reasonsDiv.innerHTML = '';
+      const icons = {'RSI':'📈','MACD':'📊','SMA':'📐','Volume':'🔊','Bollinger':'🎯','Sentiment':'💭','Order':'📖'};
+      (sig.reasons || []).forEach(r => {
+        const icon = Object.entries(icons).find(([k]) => r.includes(k));
+        reasonsDiv.innerHTML += '<div class="reason-item"><div class="reason-icon">' + (icon ? icon[1] : '📌') + '</div><span>' + r + '</span></div>';
+      });
+    }
+
+    // Trending
+    const tbody = document.getElementById('trending');
+    tbody.innerHTML = '';
+    (data.trending || []).forEach((t, i) => {
+      tbody.innerHTML += '<tr><td>' + (i+1) + '</td><td><strong>' + t.symbol.toUpperCase() + '</strong></td><td>' + t.name + '</td><td>' + t.score + '</td></tr>';
+    });
+
+    // Wallet
+    document.getElementById('wallet').textContent = data.wallet || '--';
+
+    // Update time
+    document.getElementById('last-update').textContent = new Date().toLocaleTimeString();
+
+  } catch(e) {
+    console.error('Refresh failed:', e);
+    document.getElementById('last-update').textContent = 'Error - retrying...';
+  }
+}
+
+refresh();
+setInterval(refresh, 30000);
+</script>
+</body>
+</html>
