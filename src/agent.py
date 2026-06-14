@@ -19,6 +19,7 @@ from src.competition import (
     TRADING_PAIRS, ELIGIBLE_TOKENS, register_agent_on_chain,
     is_eligible_token, get_eligible_token_address
 )
+from src.cmc_agent_hub import CMCAgentHub
 from config.settings import (
     MAX_TRADE_SIZE_BNB, STOP_LOSS_PCT, TAKE_PROFIT_PCT,
     MAX_OPEN_POSITIONS, MIN_CONFIDENCE_SCORE, BSC_TOKENS
@@ -32,6 +33,7 @@ class TradingAgent:
         self.fetcher = MarketDataFetcher()
         self.strategy = TradingStrategy()
         self.executor = BSCExecutor()
+        self.cmc = CMCAgentHub()  # CMC Agent Hub integration
         self.risk_manager = RiskManager(RiskConfig(
             max_drawdown_pct=30.0,
             stop_loss_pct=STOP_LOSS_PCT,
@@ -87,6 +89,14 @@ class TradingAgent:
         needs_trades = self.risk_manager.needs_more_trades()
         if needs_trades:
             print("[Agent] ⚡ Need to meet min 1 trade/day requirement")
+
+        # Get CMC Agent Hub sentiment
+        cmc_sentiment = self.cmc.get_market_sentiment()
+        if cmc_sentiment:
+            fng = cmc_sentiment.get("fear_greed_index", 50)
+            classification = cmc_sentiment.get("classification", "Neutral")
+            print(f"[CMC] Fear & Greed: {fng} ({classification})")
+            cycle_result["cmc_sentiment"] = cmc_sentiment
 
         # Analyze 3 pairs per cycle
         for _ in range(3):
