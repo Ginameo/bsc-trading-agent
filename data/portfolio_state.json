@@ -1,0 +1,15 @@
+{
+  "initial_balance": 0.1,
+  "current_balance": 0.1,
+  "peak_balance": 0.1,
+  "drawdown_pct": 0.0,
+  "total_trades": 0,
+  "winning_trades": 0,
+  "losing_trades": 0,
+  "daily_trades": {},
+  "daily_pnl": {},
+  "last_trade_time": "",
+  "last_loss_time": 0.0,
+  "is_active": true,
+  "disqualification_reason": ""
+}
